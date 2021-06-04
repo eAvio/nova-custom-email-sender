@@ -1,63 +1,89 @@
 <template>
     <div class="flex">
         <div class="w-3/5">
-            <h3 class="text-base text-80 font-bold mb-3">{{ messages['from-header'] }}</h3>
+            <h3 class="text-base text-80 font-bold mb-3">
+                {{ messages["from-header"] }}
+            </h3>
 
             <div class="mb-8">
-                <p class="mb-2 italic">{{ messages['from-copy'] }}</p>
+                <p class="mb-2 italic">{{ messages["from-copy"] }}</p>
                 <select-control
                     v-model="from"
                     class="w-full form-control form-select"
                     :disabled="config.from.options.length <= 1 || isThinking"
                 >
                     <option value="" selected disabled>
-                        {{ messages['choose-an-option'] }}
+                        {{ messages["choose-an-option"] }}
                     </option>
-                    <option v-for="option in config.from.options" :key="option.address" :value="option.address">
+                    <option
+                        v-for="option in config.from.options"
+                        :key="option.address"
+                        :value="option.address"
+                    >
                         {{ option.name }}
                     </option>
                 </select-control>
             </div>
 
             <div class="mb-8">
-                <h3 class="text-base text-80 font-bold mb-3">{{ messages['subject-header'] }}</h3>
+                <h3 class="text-base text-80 font-bold mb-3">
+                    {{ messages["subject-header"] }}
+                </h3>
                 <div class="mb-8">
-                    <p class="mb-2 italic">{{ messages['subject-copy'] }}</p>
-                    <counter-input :placeholder="messages['subject-placeholder']"
-                                   :model.sync="subject"
-                                   :disabled="isThinking"
+                    <p class="mb-2 italic">{{ messages["subject-copy"] }}</p>
+                    <counter-input
+                        :placeholder="messages['subject-placeholder']"
+                        :model.sync="subject"
+                        :disabled="isThinking"
                     ></counter-input>
                 </div>
             </div>
 
             <div class="mb-8">
-                <h3 class="text-base text-80 font-bold mb-3">{{ messages['recipients-header'] }}</h3>
-                <recipient-form :messages="messages"
-                                @add="addAddress"
-                                :send-to-all.sync="sendToAll"
-                                :loading="isThinking"
-                                :recipients="recipients"
+                <h3 class="text-base text-80 font-bold mb-3">
+                    {{ messages["recipients-header"] }}
+                </h3>
+                <recipient-form
+                    :messages="messages"
+                    @add="addAddress"
+                    @addGroup="addGroup"
+                    @removeGroup="removeGroup"
+                    :send-to-all.sync="sendToAll"
+                    :loading="isThinking"
+                    :recipients="recipients"
                 ></recipient-form>
             </div>
 
             <div class="mb-8">
-                <h3 class="text-base text-80 font-bold mb-3">{{ messages['content-header'] }}</h3>
+                <h3 class="text-base text-80 font-bold mb-3">
+                    {{ messages["content-header"] }}
+                </h3>
 
                 <div class="mb-6">
-                    <p class="mb-2">{{ messages['toggle-use-file'] }}</p>
-                    <toggle-button :width="60" :height="26" color="var(--primary)" v-model="useFileContent" :disabled="loading"/>
+                    <p class="mb-2">{{ messages["toggle-use-file"] }}</p>
+                    <toggle-button
+                        :width="60"
+                        :height="26"
+                        color="var(--primary)"
+                        v-model="useFileContent"
+                        :disabled="loading"
+                    />
                 </div>
                 <div class="mb-8" v-if="useFileContent">
-                    <file-select @input="loadFile" v-model="htmlFile" :messages="messages" />
+                    <file-select
+                        @input="loadFile"
+                        v-model="htmlFile"
+                        :messages="messages"
+                    />
                 </div>
                 <div class="mb-8" v-else>
-
-                    <p class="mb-2">{{ messages['content-copy'] }}</p>
+                    <p class="mb-2">{{ messages["content-copy"] }}</p>
                     <div class="input-wrapper">
-                        <quill-editor class="quill-editor"
-                                      :options="quillEditorOptions"
-                                      v-model="htmlContent"
-                                      ref="myQuillEditor"
+                        <quill-editor
+                            class="quill-editor"
+                            :options="quillEditorOptions"
+                            v-model="htmlContent"
+                            ref="myQuillEditor"
                         ></quill-editor>
                     </div>
                 </div>
@@ -66,50 +92,97 @@
             <div class="mt-4">
                 <div v-if="nebulaSenderActive">
                     <div v-if="existingMessage">
-                        <h3 class="text-base text-80 font-bold mb-3">{{ messages['send-preview-update-draft'] }}</h3>
-                        <p class="mb-2">{{ messages['preview-update-draft-copy'] }}</p>
+                        <h3 class="text-base text-80 font-bold mb-3">
+                            {{ messages["send-preview-update-draft"] }}
+                        </h3>
+                        <p class="mb-2">
+                            {{ messages["preview-update-draft-copy"] }}
+                        </p>
                     </div>
                     <div v-else>
-                        <h3 class="text-base text-80 font-bold mb-3">{{ messages['send-preview-draft'] }}</h3>
-                        <p class="mb-2">{{ messages['preview-draft-copy'] }}</p>
+                        <h3 class="text-base text-80 font-bold mb-3">
+                            {{ messages["send-preview-draft"] }}
+                        </h3>
+                        <p class="mb-2">{{ messages["preview-draft-copy"] }}</p>
                     </div>
                 </div>
                 <div v-else>
-                    <h3 class="text-base text-80 font-bold mb-3">{{ messages['send-preview'] }}</h3>
-                    <p class="mb-2">{{ messages['preview-copy'] }}</p>
+                    <h3 class="text-base text-80 font-bold mb-3">
+                        {{ messages["send-preview"] }}
+                    </h3>
+                    <p class="mb-2">{{ messages["preview-copy"] }}</p>
                 </div>
 
                 <div class="flex" v-if="nebulaSenderActive">
                     <div class="flex-1">
-                        <button class="btn btn-default btn-primary" @click="sendMessage"
-                                :disabled="isThinking || !formIsValid()">
-                            {{ loading ? messages['send-message-loading'] : messages['send-message'] }}
+                        <button
+                            class="btn btn-default btn-primary"
+                            @click="sendMessage"
+                            :disabled="isThinking || !formIsValid()"
+                        >
+                            {{
+                                loading
+                                    ? messages["send-message-loading"]
+                                    : messages["send-message"]
+                            }}
                         </button>
-                        <button class="btn btn-default btn-primary" @click="saveDraft"
-                                :disabled="isThinking || !draftIsValid()">
+                        <button
+                            class="btn btn-default btn-primary"
+                            @click="saveDraft"
+                            :disabled="isThinking || !draftIsValid()"
+                        >
                             <span v-if="draftSaved">
-                                {{ draftSaving ? messages['updating'] : messages['update-draft'] }}
+                                {{
+                                    draftSaving
+                                        ? messages["updating"]
+                                        : messages["update-draft"]
+                                }}
                             </span>
                             <span v-else>
-                                {{ draftSaving ? messages['saving'] : messages['save-draft'] }}
+                                {{
+                                    draftSaving
+                                        ? messages["saving"]
+                                        : messages["save-draft"]
+                                }}
                             </span>
                         </button>
                     </div>
                     <div class="text-right">
-                        <button class="btn btn-default btn-secondary" @click="preview"
-                                :disabled="isThinking || !formIsValid()">
-                            {{ gettingPreview ? messages['preview-loading'] : messages['preview'] }}
+                        <button
+                            class="btn btn-default btn-secondary"
+                            @click="preview"
+                            :disabled="isThinking || !formIsValid()"
+                        >
+                            {{
+                                gettingPreview
+                                    ? messages["preview-loading"]
+                                    : messages["preview"]
+                            }}
                         </button>
                     </div>
                 </div>
                 <div v-else>
-                    <button class="btn btn-default btn-primary" @click="sendMessage"
-                            :disabled="isThinking || !formIsValid()">
-                        {{ loading ? messages['send-message-loading'] : messages['send-message'] }}
+                    <button
+                        class="btn btn-default btn-primary"
+                        @click="sendMessage"
+                        :disabled="isThinking || !formIsValid()"
+                    >
+                        {{
+                            loading
+                                ? messages["send-message-loading"]
+                                : messages["send-message"]
+                        }}
                     </button>
-                    <button class="btn btn-default btn-secondary" @click="preview"
-                            :disabled="isThinking || !formIsValid()">
-                        {{ gettingPreview ? messages['preview-loading'] : messages['preview'] }}
+                    <button
+                        class="btn btn-default btn-secondary"
+                        @click="preview"
+                        :disabled="isThinking || !formIsValid()"
+                    >
+                        {{
+                            gettingPreview
+                                ? messages["preview-loading"]
+                                : messages["preview"]
+                        }}
                     </button>
                 </div>
             </div>
@@ -117,44 +190,76 @@
 
         <div class="w-2/5">
             <div class="recipients-list px-6">
-                <h3 class="text-base text-80 font-bold mb-3">{{ messages['recipients-list-header'] }}</h3>
+                <h3 class="text-base text-80 font-bold mb-3">
+                    {{ messages["recipients-list-header"] }}
+                </h3>
                 <div>
-                    <ul class="divide-y divide-gray-200" style="padding-left: 0;">
-                        <recipient-item :recipient="recipient"
-                                        v-for="(recipient, index) of recipients"
-                                        :key="index"
-                                        @delete="removeRecipient(index)"
+                    <ul
+                        class="divide-y divide-gray-200"
+                        style="padding-left: 0"
+                    >
+                        <recipient-item
+                            :recipient="recipient"
+                            v-for="(recipient, index) of recipients"
+                            :key="index"
+                            @delete="removeRecipient(index)"
                         ></recipient-item>
                     </ul>
                 </div>
 
-                <div v-if="!recipients && sendToAll === false || recipients.length === 0 && sendToAll === false" class="relative rounded-md p-4 overflow-hidden">
-                    <div class="absolute w-full h-full bg-danger opacity-25" style="left: 0; top: 0;"></div>
+                <div
+                    v-if="
+                        (!recipients && sendToAll === false) ||
+                        (recipients.length === 0 && sendToAll === false)
+                    "
+                    class="relative rounded-md p-4 overflow-hidden"
+                >
+                    <div
+                        class="absolute w-full h-full bg-danger opacity-25"
+                        style="left: 0; top: 0"
+                    ></div>
                     <div class="relative flex">
                         <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-danger" x-description="Heroicon name: x-circle" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                            <svg
+                                class="h-5 w-5 text-danger"
+                                x-description="Heroicon name: x-circle"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                    clip-rule="evenodd"
+                                ></path>
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <h3 class="text-sm leading-5 font-medium text-danger">
-                                {{ messages['recipients-no-address-found'] }}
+                            <h3
+                                class="text-sm leading-5 font-medium text-danger"
+                            >
+                                {{ messages["recipients-no-address-found"] }}
                             </h3>
                         </div>
                     </div>
                 </div>
                 <div v-if="sendToAll === true" class="p-4 bg-primary rounded">
-                    <p class="text-white">{{ messages['recipients-send-all'] }}</p>
+                    <p class="text-white">
+                        {{ messages["recipients-send-all"] }}
+                    </p>
                 </div>
             </div>
         </div>
 
-        <preview-modal ref="previewModal" @preview="setGettingPreview"></preview-modal>
+        <preview-modal
+            ref="previewModal"
+            @preview="setGettingPreview"
+        ></preview-modal>
     </div>
 </template>
 
 <script>
-import {quillEditor} from 'vue-quill-editor'
+import { quillEditor } from "vue-quill-editor";
 
 import Translations from "../mixins/Translations";
 import CounterInput from "./CounterInput";
@@ -165,17 +270,15 @@ import RecipientItem from "./RecipientItem";
 
 import StorageService from "../services/StorageService";
 
-import { ToggleButton } from 'vue-js-toggle-button'
+import { ToggleButton } from "vue-js-toggle-button";
 import NebulaSenderService from "../services/NebulaSenderService";
 import ApiService from "../services/ApiService";
 
 export default {
     name: "MessageForm",
-    mixins: [
-        Translations,
-    ],
+    mixins: [Translations],
     props: {
-        existingMessage: Object
+        existingMessage: Object,
     },
     components: {
         PreviewModal,
@@ -190,16 +293,16 @@ export default {
         return {
             loading: false,
             draftSaving: false,
-            from: '',
-            subject: '',
+            from: "",
+            subject: "",
             sendToAll: false,
             useFileContent: false,
             gettingPreview: false,
             recipients: [],
             htmlFile: null,
-            htmlContent: '',
+            htmlContent: "",
             draftSaved: false,
-        }
+        };
     },
     beforeMount() {
         // Sets draft content
@@ -224,10 +327,10 @@ export default {
          */
         isThinking() {
             if (this.loading || this.gettingPreview || this.draftSaving) {
-                return true
+                return true;
             }
 
-            return false
+            return false;
         },
         /**
          * @return {Object}
@@ -236,15 +339,15 @@ export default {
             if (!StorageService.configuration.editor) {
                 return {
                     toolbar: [
-                        { 'header': 1 },
-                        { 'header': 2 },
-                        { 'list': 'ordered' },
-                        { 'list': 'bullet' },
-                        'bold',
-                        'italic',
-                        'link',
-                    ]
-                }
+                        { header: 1 },
+                        { header: 2 },
+                        { list: "ordered" },
+                        { list: "bullet" },
+                        "bold",
+                        "italic",
+                        "link",
+                    ],
+                };
             }
 
             return StorageService.configuration.editor;
@@ -255,20 +358,20 @@ export default {
         quillEditorOptions() {
             return {
                 modules: {
-                    ...this.quillConfiguration
+                    ...this.quillConfiguration,
                 },
-                placeholder: this.messages['content-placeholder']
-            }
+                placeholder: this.messages["content-placeholder"],
+            };
         },
         quillEditor() {
-            return this.$refs.myQuillEditor.quill
+            return this.$refs.myQuillEditor.quill;
         },
         /**
          * @return {boolean}
          */
         nebulaSenderActive() {
             return NebulaSenderService.active;
-        }
+        },
     },
     methods: {
         /**
@@ -279,12 +382,49 @@ export default {
         addAddress(userObject) {
             this.recipients.push(userObject);
         },
+        /**
+         * @name addGroup
+         * @description Add a group of recipients to the list
+         * @param {Array} userArray
+         */
+        addGroup(userArray) {
+            for (const [key, value] of Object.entries(userArray)) {
+                let newUser = { email: key, name: value };
+                if (
+                    !this.recipients.some(
+                        (recipient) => recipient["email"] === key
+                    )
+                ) {
+                    this.recipients.push(newUser);
+                }
+            }
+        },
+        /**
+         * @name removeGroup
+         * @description Remove a group of recipients from the list
+         * @param {Array} userArray
+         */
+        removeGroup(userArray) {
+            for (const [key, value] of Object.entries(userArray)) {
+                if (
+                    this.recipients.some(
+                        (recipient) => recipient["email"] === key
+                    )
+                ) {
+                    this.recipients = this.recipients.filter(function (
+                        recipient
+                    ) {
+                        return recipient.email !== key;
+                    });
+                }
+            }
+        },
         loadFile(file) {
             const reader = new FileReader();
-            reader.onload = e => {
-                this.$emit("load", e.target.result)
-                this.htmlContent = e.target.result
-            }
+            reader.onload = (e) => {
+                this.$emit("load", e.target.result);
+                this.htmlContent = e.target.result;
+            };
             reader.readAsText(file);
         },
         /**
@@ -293,11 +433,18 @@ export default {
          * @return {boolean}
          */
         formIsValid() {
-            if (this.subject && this.subject.length === 0 || this.htmlContent && this.htmlContent.length === 0) {
+            if (
+                (this.subject && this.subject.length === 0) ||
+                (this.htmlContent && this.htmlContent.length === 0)
+            ) {
                 return false;
             }
 
-            if (this.recipients && this.recipients.length === 0 && !this.sendToAll) {
+            if (
+                this.recipients &&
+                this.recipients.length === 0 &&
+                !this.sendToAll
+            ) {
                 return false;
             }
 
@@ -317,8 +464,8 @@ export default {
          * @return {void}
          */
         setLoading(loading = true, isDraft = false) {
-            if(!this.useFileContent) {
-                this.quillEditor.enable(!loading)
+            if (!this.useFileContent) {
+                this.quillEditor.enable(!loading);
             }
             if (isDraft) {
                 this.draftSaving = loading;
@@ -342,28 +489,32 @@ export default {
                 this.sendToAll,
                 this.recipients,
                 this.htmlContent
-            ).then(response => {
-                vm.$toasted.show(response, { type: 'success' });
-                vm.$emit('success')
-                vm.setLoading(false);
-            }).catch(error => {
-                let status = error.status
+            )
+                .then((response) => {
+                    vm.$toasted.show(response, { type: "success" });
+                    vm.$emit("success");
+                    vm.setLoading(false);
+                })
+                .catch((error) => {
+                    let status = error.status;
 
-                if (status === 422) {
-                    this.$toasted.show(error.data.message, {type: 'error'})
-                } else {
-                    this.$toasted.show(error.statusText, {type: 'error'})
-                }
+                    if (status === 422) {
+                        this.$toasted.show(error.data.message, {
+                            type: "error",
+                        });
+                    } else {
+                        this.$toasted.show(error.statusText, { type: "error" });
+                    }
 
-                vm.setLoading(false);
-            });
+                    vm.setLoading(false);
+                });
         },
         /**
          * @param {boolean} loading
          */
         setGettingPreview(loading = true) {
-            if(!this.useFileContent) {
-                this.quillEditor.enable(!loading)
+            if (!this.useFileContent) {
+                this.quillEditor.enable(!loading);
             }
             this.gettingPreview = loading;
         },
@@ -379,11 +530,11 @@ export default {
         },
 
         reset() {
-            this.subject = '';
+            this.subject = "";
             this.sendToAll = false;
             this.complete = false;
             this.recipients = [];
-            this.htmlContent = '';
+            this.htmlContent = "";
             this.useFileContent = false;
         },
 
@@ -410,7 +561,7 @@ export default {
                     this.subject,
                     this.recipients,
                     this.sendToAll
-                )
+                );
             } else {
                 request = ApiService.createDraft(
                     this.from,
@@ -419,33 +570,41 @@ export default {
                     this.subject,
                     this.recipients,
                     this.sendToAll
-                )
+                );
             }
 
-            request.then(response => {
-                this.$toasted.show(this.messages['draft-saved'], {type: 'success'})
+            request
+                .then((response) => {
+                    this.$toasted.show(this.messages["draft-saved"], {
+                        type: "success",
+                    });
 
-                if (this.existingMessage) {
+                    if (this.existingMessage) {
+                        this.setLoading(false, true);
+                        this.$emit("update", response.data);
+                    } else {
+                        this.$router.push({
+                            name: "nebula-sender-drafts-edit",
+                            params: { id: response.data.id },
+                        });
+                    }
+                })
+                .catch((error) => {
+                    let status = error.status;
+
+                    if (status === 422) {
+                        this.$toasted.show(error.data.message, {
+                            type: "error",
+                        });
+                    } else {
+                        this.$toasted.show(error.statusText, { type: "error" });
+                    }
                     this.setLoading(false, true);
-                    this.$emit('update', response.data);
-                } else {
-                    this.$router.push({ name: 'nebula-sender-drafts-edit', params: { id: response.data.id }})
-                }
-            }).catch(error => {
-                let status = error.status
-
-                if (status === 422) {
-                    this.$toasted.show(error.data.message, {type: 'error'})
-                } else {
-                    this.$toasted.show(error.statusText, {type: 'error'})
-                }
-                this.setLoading(false, true);
-            })
-        }
-    }
-}
+                });
+        },
+    },
+};
 </script>
 
 <style scoped>
-
 </style>
