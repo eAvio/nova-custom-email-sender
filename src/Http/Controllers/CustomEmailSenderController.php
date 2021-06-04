@@ -6,6 +6,7 @@ use Dniccum\CustomEmailSender\Library\NebulaSenderUtility;
 use Dniccum\CustomEmailSender\Library\UserUtility;
 use Dniccum\CustomEmailSender\Mail\CustomMessageMailable;
 use Illuminate\Http\Request;
+use Pktharindu\NovaPermissions\Role;
 
 class CustomEmailSenderController
 {
@@ -63,6 +64,17 @@ class CustomEmailSenderController
                 'messages' => array_merge(__('custom-email-sender::tool'), __('custom-email-sender::nebula-sender')),
                 'nebula_sender_active' => $nebulaSenderActive,
             ]);
+    }
+    
+    public function getGroups()
+    {
+        $roles = Role::select('id', 'name', 'slug')->with('users:id,first_name,last_name,email')->get();
+        $return = [];
+        foreach ($roles as $key => $role) {
+            $return[$key] = $role->toArray();
+            $return[$key]['users'] = $role->users->pluck('title','email');
+        }
+        return $return;
     }
 
     /**
