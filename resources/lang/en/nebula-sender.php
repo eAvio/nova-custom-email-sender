@@ -44,6 +44,7 @@ return [
     'saving' => 'Saving. Please wait...',
     'select-compose-to-create-message' => 'Select "Compose" to create a new message',
     'select-message-to-view' => 'Select a message to view',
+    'select-user-groups' => 'Select user group',
     'send-preview-draft' => 'Send/Preview/Save Draft',
     'send-preview-update-draft' => 'Send/Preview/Update Draft',
     'sent-messages' => 'Sent Messages',
