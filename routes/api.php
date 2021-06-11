@@ -19,6 +19,8 @@ Route::post('/preview', 'Dniccum\CustomEmailSender\Http\Controllers\CustomEmailS
 Route::get('/search', 'Dniccum\CustomEmailSender\Http\Controllers\CustomEmailSenderController@search');
 Route::get('/get-groups', 'Dniccum\CustomEmailSender\Http\Controllers\CustomEmailSenderController@getGroups');
 
+Route::put('/addFiles', 'Dniccum\CustomEmailSender\Http\Controllers\CustomEmailSenderController@addFiles');
+
 // Nebula Sender specific routes
 Route::get('/nebula-sender-messages', 'Dniccum\CustomEmailSender\Http\Controllers\NebulaSenderController@messages');
 Route::post('/nebula-sender-clone/{message}', 'Dniccum\CustomEmailSender\Http\Controllers\NebulaSenderController@clone');

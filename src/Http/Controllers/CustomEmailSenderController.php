@@ -1,4 +1,5 @@
 <?php
+
 namespace Dniccum\CustomEmailSender\Http\Controllers;
 
 use Dniccum\CustomEmailSender\Http\Requests\SendCustomEmailMessage;
@@ -42,14 +43,14 @@ class CustomEmailSenderController
          */
         $configurationFromOptions = config('novaemailsender.from.options');
 
-        $fromOptions = collect($configurationFromOptions)->map(function($sender) {
+        $fromOptions = collect($configurationFromOptions)->map(function ($sender) {
             return [
                 'address' => $sender['address'],
                 'name' => $sender['name'] . ' (' . $sender['address'] . ')',
             ];
         });
-        if($user = $this->getAuthUserSender()){
-            $user['name'] = $user['name']?  __('Me') . ' (' . $user['name'] . ' | ' . $user['address'] . ')' : '—';
+        if ($user = $this->getAuthUserSender()) {
+            $user['name'] = $user['name'] ?  __('Me') . ' (' . $user['name'] . ' | ' . $user['address'] . ')' : '—';
             $fromOptions->push($user);
         }
 
@@ -65,14 +66,14 @@ class CustomEmailSenderController
                 'nebula_sender_active' => $nebulaSenderActive,
             ]);
     }
-    
+
     public function getGroups()
     {
         $roles = Role::select('id', 'name', 'slug')->with('users:id,first_name,last_name,email')->get();
         $return = [];
         foreach ($roles as $key => $role) {
             $return[$key] = $role->toArray();
-            $return[$key]['users'] = $role->users->pluck('title','email');
+            $return[$key]['users'] = $role->users->pluck('title', 'email');
         }
         return $return;
     }
@@ -87,25 +88,31 @@ class CustomEmailSenderController
     {
         $requestData = $request->validated();
 
+        $files = $requestData['files'];
+        $attachments = [];
+        foreach ($files as $key => $file) {
+            array_push($attachments, 'email_attachments/' . $file['name']);
+        }
+
         if ($requestData['sendToAll']) {
             $users = $this->userUtility->getAllUsers();
         } else {
-            $users = collect($requestData['recipients'])->map(function($recipient) {
+            $users = collect($requestData['recipients'])->map(function ($recipient) {
                 return [
                     'email' => $recipient['email'],
                 ];
             });
         }
 
-        $sender = collect( config('novaemailsender.from.options') )
-                ->push($this->getAuthUserSender()) // remember the auth select option
-                ->firstWhere('address', $requestData['from']);
+        $sender = collect(config('novaemailsender.from.options'))
+            ->push($this->getAuthUserSender()) // remember the auth select option
+            ->firstWhere('address', $requestData['from']);
         $content = $requestData['htmlContent'];
         $subject = $requestData['subject'];
 
-        $users->each(function($user) use ($content, $subject, $sender) {
+        $users->each(function($user) use ($content, $subject, $sender, $attachments) {
             \Mail::to($user)
-                 ->send(new CustomMessageMailable($subject, $content, $sender));
+                 ->send(new CustomMessageMailable($subject, $content, $sender, $attachments));
         });
 
         if (config('novaemailsender.nebula_sender.key')) {
@@ -134,7 +141,7 @@ class CustomEmailSenderController
         $email = new CustomMessageMailable($subject, $content);
 
         return response()->json([
-           'content' => $email->render()
+            'content' => $email->render()
         ], 200);
     }
 

@@ -47,7 +47,7 @@
                                     ? 'group-selected'
                                     : 'group-unselected',
                             ]"
-                            v-for="group in user_groups"
+                            v-for="group in user_groups.filter(group => Object.keys(group.users).length > 0)"
                             :key="group.id"
                             >{{ group.name }}</label
                         >
@@ -128,7 +128,7 @@ export default {
             Nova.request()
                 .get("/nova-vendor/custom-email-sender/get-groups")
                 .then((results) => {
-                    console.log(results);
+                    // console.log(results);
                     this.user_groups = results.data;
                     // this.searchResults = results.data.map(result => {
                     //     return new Recipient(result.email, result.name)
@@ -140,7 +140,7 @@ export default {
             let clickedGroup = this.user_groups.filter(function (group) {
                 return group.id === id;
             })[0];
-            
+
             if (this.isGroupSelected(id)) {
                 this.selected_groups = this.selected_groups.filter(function (
                     group

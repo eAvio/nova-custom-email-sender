@@ -5,6 +5,7 @@ namespace Dniccum\CustomEmailSender\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class CustomMessageMailable extends Mailable implements ShouldQueue
@@ -27,6 +28,11 @@ class CustomMessageMailable extends Mailable implements ShouldQueue
     public $sender;
 
     /**
+     * @var array|null $sender
+     */
+    public $files;
+
+    /**
      * Create a new message instance.
      *
      * @param string $subject
@@ -34,11 +40,12 @@ class CustomMessageMailable extends Mailable implements ShouldQueue
      * @param array|null $sender
      * @return void
      */
-    public function __construct(string $subject, string $message, $sender = null)
+    public function __construct(string $subject, string $message, $sender = null, $files = [])
     {
         $this->subject = $subject;
         $this->message = $message;
         $this->sender = $sender;
+        $this->files = $files;
 
     }
 
@@ -76,6 +83,9 @@ class CustomMessageMailable extends Mailable implements ShouldQueue
             $this->markdown($view);
         } else {
             $this->view($view);
+        }
+        foreach ($this->files as $filename) {
+            $this->attachFromStorageDisk('s3', $filename);
         }
 
         return $this;

@@ -12,13 +12,14 @@ class SendCustomEmailMessage extends FormRequest
      */
     public function rules()
     {
-        $maxCharacters = config('novaemailsender.validation.max-characters') ?? 2000;
+        // $maxCharacters = config('novaemailsender.validation.max-characters') ?? 2000;
         return [
             'from' => 'string|required',
             'subject' => 'string|required',
             'sendToAll' => 'boolean|required_without:recipients',
             'recipients' => 'required_without:sendToAll|array',
-            'htmlContent' => "required|string|max:$maxCharacters",
+            'htmlContent' => "required|string",
+            'files' => "array",
         ];
     }
 

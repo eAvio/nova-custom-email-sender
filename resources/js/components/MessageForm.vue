@@ -1,5 +1,15 @@
 <template>
     <div class="flex">
+        <script
+            type="application/javascript"
+            defer
+            src="https://unpkg.com/vue-upload-component"
+        ></script>
+        <script
+            type="application/javascript"
+            defer
+            src="https://unpkg.com/vue"
+        ></script>
         <div class="w-3/5">
             <h3 class="text-base text-80 font-bold mb-3">
                 {{ messages["from-header"] }}
@@ -85,6 +95,86 @@
                             v-model="htmlContent"
                             ref="myQuillEditor"
                         ></quill-editor>
+                    </div>
+                    <div
+                        class="drop-class"
+                        :class="
+                            $refs.upload && $refs.upload.dropActive
+                                ? 'upload-highlight'
+                                : ''
+                        "
+                    >
+                        <file-upload
+                            v-if="!loading"
+                            class="file-upload-field"
+                            ref="upload"
+                            v-model="files"
+                            put-action="/upload/addFiles"
+                            drop=".drop-class"
+                            :headers="{ 'X-CSRF-Token': token }"
+                            :multiple="true"
+                            :size="1024 * 1024 * 10"
+                            :maximum="10"
+                            @input-file="inputFile"
+                            @input-filter="inputFilter"
+                        >
+                            Add Attachment
+                        </file-upload>
+                        <ul>
+                            <li
+                                class="attachment-item"
+                                v-for="(file, index) in files"
+                                :key="file.id"
+                            >
+                                <img
+                                    v-if="isImage(file.name)"
+                                    :src="file.blob"
+                                />
+                                <img
+                                    v-else
+                                    src="https://findicons.com/files/icons/1579/devine/256/file.png"
+                                />
+                                <span class="text-wrapper"
+                                    ><span class="file-name">{{
+                                        file.name
+                                    }}</span>
+                                    <!-- <span class="errors"
+                                        >Error: {{ file.error }}, Success:
+                                        {{ file.success }}</span
+                                    > -->
+                                </span>
+                                <span
+                                    class="status"
+                                    :class="
+                                        file.success == true
+                                            ? 'success'
+                                            : 'fail'
+                                    "
+                                ></span>
+                                <span
+                                    class="trash-box"
+                                    @click="removeFile(index)"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            d="M3 6v18h18v-18h-18zm5 14c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm4-18v2h-20v-2h5.711c.9 0 1.631-1.099 1.631-2h5.315c0 .901.73 2 1.631 2h5.712z"
+                                        />
+                                    </svg>
+                                </span>
+                            </li>
+                        </ul>
+
+                        <div
+                            class="drop-here-label"
+                            v-if="$refs.upload && $refs.upload.dropActive"
+                        >
+                            Drop here...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -236,7 +326,12 @@
                         </div>
                         <div class="ml-3">
                             <h3
-                                class="text-sm leading-5 font-medium text-danger"
+                                class="
+                                    text-sm
+                                    leading-5
+                                    font-medium
+                                    text-danger
+                                "
                             >
                                 {{ messages["recipients-no-address-found"] }}
                             </h3>
@@ -258,8 +353,30 @@
     </div>
 </template>
 
+<script src="../../../node_modules/quill-image-resize-module/image-resize.min.js"></script>
 <script>
+import "quill/dist/quill.core.css";
+import "quill/dist/quill.snow.css";
+import "quill/dist/quill.bubble.css";
+
+import Quill from "quill";
+
+window.Quill = Quill;
+
+// const ImageResize = require('quill-image-resize-module').default
+// Quill.register('modules/imageResize', ImageResize);
+
+import { ImageDrop } from "quill-image-drop-module";
+// import { ImageUploader } from "quill-image-uploader";
+// import ImageResize from "quill-image-resize-module";
+import ImageResize from "quill-image-resize-module--fix-imports-error";
+
+Quill.register("modules/imageDrop", ImageDrop);
+Quill.register("modules/imageResize", ImageResize);
+// Quill.register("modules/imageUploader", ImageUploader);
+
 import { quillEditor } from "vue-quill-editor";
+// import { quillRedefine } from "vue-quill-editor-upload"; //Import image upload
 
 import Translations from "../mixins/Translations";
 import CounterInput from "./CounterInput";
@@ -273,7 +390,6 @@ import StorageService from "../services/StorageService";
 import { ToggleButton } from "vue-js-toggle-button";
 import NebulaSenderService from "../services/NebulaSenderService";
 import ApiService from "../services/ApiService";
-
 export default {
     name: "MessageForm",
     mixins: [Translations],
@@ -291,6 +407,8 @@ export default {
     },
     data() {
         return {
+            upload: "",
+            headers: {},
             loading: false,
             draftSaving: false,
             from: "",
@@ -302,9 +420,11 @@ export default {
             htmlFile: null,
             htmlContent: "",
             draftSaved: false,
+            files: [],
         };
     },
     beforeMount() {
+        this.loading = true;
         // Sets draft content
         if (this.existingMessage && !_.isEmpty(this.existingMessage)) {
             this.from = this.existingMessage.from;
@@ -314,6 +434,9 @@ export default {
             this.htmlContent = this.existingMessage.content;
             this.draftSaved = true;
         }
+    },
+    mounted() {
+        this.getToken();
     },
     computed: {
         /**
@@ -341,11 +464,14 @@ export default {
                     toolbar: [
                         { header: 1 },
                         { header: 2 },
+                        { header: 3 },
+                        { header: 4 },
                         { list: "ordered" },
                         { list: "bullet" },
                         "bold",
                         "italic",
                         "link",
+                        "image",
                     ],
                 };
             }
@@ -356,12 +482,19 @@ export default {
          * @return {Object}
          */
         quillEditorOptions() {
-            return {
+            let rtrn = {
                 modules: {
                     ...this.quillConfiguration,
+
+                    imageResize: {
+                        modules: ["Resize", "DisplaySize"],
+                    },
+                    imageDrop: true,
                 },
+                theme: "snow",
                 placeholder: this.messages["content-placeholder"],
             };
+            return rtrn;
         },
         quillEditor() {
             return this.$refs.myQuillEditor.quill;
@@ -374,6 +507,133 @@ export default {
         },
     },
     methods: {
+        getToken() {
+            Nova.request()
+                .get("/token")
+                .then((response) => {
+                    this.token = response.data;
+                    this.loading = false;
+                })
+                .catch((error) => {
+                    this.$toasted.show(error.response.data, { type: "error" });
+                    this.loading = false;
+                });
+        },
+        /**
+         * Has changed
+         * @param  Object|undefined   newFile   Read only
+         * @param  Object|undefined   oldFile   Read only
+         * @return undefined
+         */
+        inputFile(newFile, oldFile) {
+            // if (newFile && !oldFile) {
+            //     // Add file
+            // }
+
+            // if (newFile && oldFile) {
+            //     // Update file
+
+            //     // Start upload
+            //     if (newFile.active !== oldFile.active) {
+            //         console.log("Start upload", newFile.active, newFile);
+
+            //         // min size
+            //         if (newFile.size >= 0 && newFile.size < 1024 * 1024 * 10) {
+            //             newFile = this.$refs.upload.update(newFile, {
+            //                 error: "size",
+            //             });
+            //         }
+            //     }
+
+            //     // Upload progress
+            //     if (newFile.progress !== oldFile.progress) {
+            //         console.log("progress", newFile.progress, newFile);
+            //     }
+
+            //     // Upload error
+            //     if (newFile.error !== oldFile.error) {
+            //         console.log("error", newFile.error, newFile);
+            //     }
+
+            //     // Uploaded successfully
+            //     if (newFile.success !== oldFile.success) {
+            //         console.log("success", newFile.success, newFile);
+            //     }
+            // }
+
+            // if (!newFile && oldFile) {
+            //     // Remove file
+
+            //     // Automatically delete files on the server
+            //     if (oldFile.success && oldFile.response.id) {
+            //         // $.ajax({
+            //         //   type: 'DELETE',
+            //         //   url: '/file/delete?id=' + oldFile.response.id,
+            //         // });
+            //     }
+            // }
+            // console.log("newFile");
+            // console.log(newFile);
+            // console.log(oldFile);
+            let exists = false;
+            for (let i = 0; i < this.files.length; i++) {
+                const file = this.files[i];
+                // console.log(file);
+                exists = Object.keys(file).some(function () {
+                    return (
+                        file["name"] == newFile.name && file["id"] != newFile.id
+                    );
+                });
+                // console.log("exists");
+                // console.log(exists);
+                if (exists) break;
+            }
+
+            if (exists) {
+                var removeIndex = this.files
+                    .map((file) => file.name)
+                    .indexOf(newFile.name);
+                // console.log(removeIndex);
+
+                ~removeIndex && this.files.splice(removeIndex, 1);
+            }
+
+            newFile.headers.name = newFile.name;
+            newFile.headers.type = newFile.type;
+            // Automatic upload
+            if (
+                Boolean(newFile) !== Boolean(oldFile) ||
+                oldFile.error !== newFile.error
+            ) {
+                if (!this.$refs.upload.active) {
+                    this.$refs.upload.active = true;
+                }
+            }
+        },
+        /**
+         * Pretreatment
+         * @param  Object|undefined   newFile   Read and wriste
+         * @param  Object|undefined   oldFile   Read only
+         * @param  Function           prevent   Prevent changing
+         * @return undefined
+         */
+        inputFilter: function (newFile, oldFile, prevent) {
+            // Create a blob field
+            newFile.blob = "";
+            let URL = window.URL || window.webkitURL;
+            if (URL && URL.createObjectURL) {
+                newFile.blob = URL.createObjectURL(newFile.file);
+            }
+        },
+        removeFile(index) {
+            this.files.splice(index, 1);
+        },
+        isImage(typeName) {
+            if (!/\.(jpeg|jpe|jpg|gif|png|webp)$/i.test(typeName)) {
+                return false;
+            }
+            return true;
+        },
         /**
          * @name addAddress
          * @description Add recipient to the list
@@ -483,12 +743,15 @@ export default {
 
             vm.setLoading();
 
+            // this.$refs.upload.active = true;
+
             ApiService.sendMessage(
                 this.from,
                 this.subject,
                 this.sendToAll,
                 this.recipients,
-                this.htmlContent
+                this.htmlContent,
+                this.files
             )
                 .then((response) => {
                     vm.$toasted.show(response, { type: "success" });
@@ -607,4 +870,92 @@ export default {
 </script>
 
 <style scoped>
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+.attachment-item {
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    margin-top: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 25px;
+    padding-right: 55px;
+    width: 100%;
+    height: 80px;
+    overflow: hidden;
+}
+.attachment-item img {
+    float: left;
+    width: 80px;
+    height: 100%;
+    object-fit: contain;
+}
+.text-wrapper {
+    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    line-height: 60px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+.file-upload-field {
+    width: 100%;
+    border: 2px solid lightsteelblue;
+    margin-top: 1rem;
+    padding: 0.5rem;
+    font-size: 1.5rem;
+}
+.file-upload-field:hover {
+    border: 2px solid lightblue;
+}
+.file-name {
+    font-weight: bold;
+}
+.trash-box {
+    position: absolute;
+    right: 15px;
+    top: 26px;
+    filter: invert(40%) sepia(37%) saturate(4513%) hue-rotate(335deg)
+        brightness(91%) contrast(96%);
+}
+.trash-box:hover {
+    filter: invert(20%) sepia(61%) saturate(2458%) hue-rotate(340deg)
+        brightness(104%) contrast(117%);
+}
+.upload-highlight {
+    border: 1px dotted rgba(0, 0, 0, 0.3);
+}
+.drop-here-label {
+    width: 83px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+.status {
+    position: absolute;
+    left: 9px;
+    top: 28px;
+}
+.status.success:before {
+    background-color: #94e185;
+    border-color: #78d965;
+    box-shadow: 0px 0px 4px 1px #94e185;
+}
+.status.fail:before {
+    background-color: #c9404d;
+    border-color: #c42c3b;
+    box-shadow: 0px 0px 4px 1px #c9404d;
+}
+.status:before {
+    content: " ";
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 10px;
+    border: 1px solid #000;
+    border-radius: 7px;
+}
 </style>
