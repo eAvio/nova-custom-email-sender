@@ -2,7 +2,7 @@
  * @name ApiService
  * @description - A service/factory that will handle all Ajax features
  */
-export default {
+ export default {
 
     /**
      * @name drafts
@@ -165,7 +165,7 @@ export default {
      * @param {string} htmlContent
      * @return {Promise<Object>}
      */
-    sendMessage(from, subject, sendToAll, recipients= [], htmlContent) {
+    sendMessage(from, subject, sendToAll, recipients= [], htmlContent, files = []) {
         return new Promise((resolve, reject) => {
             Nova.request().post('/nova-vendor/custom-email-sender/send', {
                 from,
@@ -173,6 +173,7 @@ export default {
                 sendToAll,
                 recipients,
                 htmlContent,
+                files
             }).then(response => {
                 return resolve(response.data)
             }).catch(error => {
