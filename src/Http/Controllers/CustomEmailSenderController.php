@@ -62,7 +62,7 @@ class CustomEmailSenderController
         return response()
             ->json([
                 'config' => $configuration,
-                'messages' => array_merge(__('custom-email-sender::tool'), __('custom-email-sender::nebula-sender')),
+                'messages' => array_merge(__('custom-email-sender::tool', [], 'en'), __('custom-email-sender::nebula-sender', [], 'en')),
                 'nebula_sender_active' => $nebulaSenderActive,
             ]);
     }
@@ -110,9 +110,9 @@ class CustomEmailSenderController
         $content = $requestData['htmlContent'];
         $subject = $requestData['subject'];
 
-        $users->each(function($user) use ($content, $subject, $sender, $attachments) {
+        $users->each(function ($user) use ($content, $subject, $sender, $attachments) {
             \Mail::to($user)
-                 ->send(new CustomMessageMailable($subject, $content, $sender, $attachments));
+                ->send(new CustomMessageMailable($subject, $content, $sender, $attachments));
         });
 
         if (config('novaemailsender.nebula_sender.key')) {
@@ -128,7 +128,7 @@ class CustomEmailSenderController
             );
         }
 
-        return response()->json($users->count(). ' '.__('custom-email-sender::tool.emails-sent'), 200);
+        return response()->json($users->count() . ' ' . __('custom-email-sender::tool.emails-sent'), 200);
     }
 
     public function preview(SendCustomEmailMessage $request)
