@@ -2,12 +2,13 @@
 
 namespace Dniccum\CustomEmailSender\Http\Controllers;
 
-use Dniccum\CustomEmailSender\Http\Requests\SendCustomEmailMessage;
-use Dniccum\CustomEmailSender\Library\NebulaSenderUtility;
-use Dniccum\CustomEmailSender\Library\UserUtility;
-use Dniccum\CustomEmailSender\Mail\CustomMessageMailable;
+use App\User;
 use Illuminate\Http\Request;
 use Pktharindu\NovaPermissions\Role;
+use Dniccum\CustomEmailSender\Library\UserUtility;
+use Dniccum\CustomEmailSender\Mail\CustomMessageMailable;
+use Dniccum\CustomEmailSender\Library\NebulaSenderUtility;
+use Dniccum\CustomEmailSender\Http\Requests\SendCustomEmailMessage;
 
 class CustomEmailSenderController
 {
@@ -69,12 +70,49 @@ class CustomEmailSenderController
 
     public function getGroups()
     {
-        $roles = Role::select('id', 'name', 'slug')->with('users:id,first_name,last_name,email')->get();
         $return = [];
+        $sections = [18, 19, 20, 21];
+
+        $roles = Role::select('id', 'name', 'slug')->with('users:id,first_name,last_name,email')
+            ->whereHas('users', function ($query) {
+                return $query->where('active', true);
+            })->get();
+
         foreach ($roles as $key => $role) {
             $return[$key] = $role->toArray();
             $return[$key]['users'] = $role->users->pluck('title', 'email');
         }
+
+        foreach ($sections as $key => $sectionId) {
+            $users = User::select('id', 'first_name', 'last_name', 'email')->where('active', true)->whereHas('usersActivities', function ($q) use ($sectionId) {
+                $q->where('section_id', $sectionId)->where('active', true);
+            })->get()->pluck('title', 'email');
+
+            switch ($sectionId) {
+                case 18:
+                    $sectionName = 'Power Section';
+                    break;
+                case 19:
+                    $sectionName = 'Glider Section';
+                    break;
+                case 20:
+                    $sectionName = 'Ultralight Section';
+                    break;
+                case 21:
+                    $sectionName = 'Parachute Section';
+                    break;
+                default:
+                    $sectionName = null;
+                    break;
+            }
+
+            $return[] = [
+                'id' => $sectionId,
+                'name' => $sectionName,
+                'users' => $users
+            ];
+        }
+
         return $return;
     }
 
