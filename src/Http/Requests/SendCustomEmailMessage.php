@@ -1,4 +1,5 @@
 <?php
+
 namespace Dniccum\CustomEmailSender\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,7 +21,7 @@ class SendCustomEmailMessage extends FormRequest
             'recipients' => 'required_without:sendToAll|array',
             'htmlContent' => "required|string",
             'files' => "array",
+            'event' => "array",
         ];
     }
-
 }
