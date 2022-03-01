@@ -8,7 +8,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
-class CustomMessageMailable extends Mailable implements ShouldQueue
+class CustomMessageMailable extends Mailable
 {
     use Queueable, SerializesModels;
 
