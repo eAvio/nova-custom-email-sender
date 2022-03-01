@@ -33,6 +33,11 @@ class CustomMessageMailable extends Mailable implements ShouldQueue
     public $files;
 
     /**
+     * @var array|null $sender
+     */
+    public $event;
+
+    /**
      * Create a new message instance.
      *
      * @param string $subject
@@ -40,13 +45,13 @@ class CustomMessageMailable extends Mailable implements ShouldQueue
      * @param array|null $sender
      * @return void
      */
-    public function __construct(string $subject, string $message, $sender = null, $files = [])
+    public function __construct(string $subject, string $message, $sender = null, $files = [], $event = null)
     {
         $this->subject = $subject;
         $this->message = $message;
         $this->sender = $sender;
         $this->files = $files;
-
+        $this->event = $event;
     }
 
     /**
@@ -63,11 +68,11 @@ class CustomMessageMailable extends Mailable implements ShouldQueue
             $view = 'email';
         }
 
-        if( is_null($this->sender) ){
+        if (is_null($this->sender)) {
             $from_options = config('novaemailsender.from.options', []);
-            $sender_email = $from_options[0]['address']?? '';
-            $sender_name = $from_options[0]['name']?? '';
-        }else{
+            $sender_email = $from_options[0]['address'] ?? '';
+            $sender_name = $from_options[0]['name'] ?? '';
+        } else {
             $sender_email = $this->sender['address'];
             $sender_name = $this->sender['name'];
         }
@@ -83,6 +88,9 @@ class CustomMessageMailable extends Mailable implements ShouldQueue
             $this->markdown($view);
         } else {
             $this->view($view);
+        }
+        if ($this->event) {
+            $this->attachData($this->event, 'ical.ics');
         }
         foreach ($this->files as $filename) {
             $this->attachFromStorageDisk('s3', $filename);
