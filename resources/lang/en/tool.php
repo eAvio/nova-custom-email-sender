@@ -67,5 +67,14 @@ return [
     // toasts
     'emails-sent' => 'email(s) have been sent.',
     'invalid-email' => 'Invalid email address.',
-    'invalid-paste' => 'It looks like addresses you pasted were not valid, or already exist.'
+    'invalid-paste' => 'It looks like addresses you pasted were not valid, or already exist.',
+
+    // events
+    'event-header' => 'Create Calendar Event',
+    'event-details' => 'Enter the information of the event you want to create.',
+    'event-title' => 'Event Title',
+    'event-description' => 'Event Description',
+    'event-full-day' => 'Full Day Event',
+    'event-date-from' => 'Date From',
+    'event-date-to' => 'Date To',
 ];

@@ -5,7 +5,9 @@ namespace Dniccum\CustomEmailSender\Http\Controllers;
 use App\User;
 use Illuminate\Http\Request;
 use Pktharindu\NovaPermissions\Role;
+use Spatie\IcalendarGenerator\Components\Event;
 use Dniccum\CustomEmailSender\Library\UserUtility;
+use Spatie\IcalendarGenerator\Components\Calendar;
 use Dniccum\CustomEmailSender\Mail\CustomMessageMailable;
 use Dniccum\CustomEmailSender\Library\NebulaSenderUtility;
 use Dniccum\CustomEmailSender\Http\Requests\SendCustomEmailMessage;
@@ -131,6 +133,26 @@ class CustomEmailSenderController
         foreach ($files as $key => $file) {
             array_push($attachments, 'email_attachments/' . $file['name']);
         }
+        $eventData = $requestData['event'];
+
+        $calendar = null;
+        if ($eventData['createEvent']) {
+            $event = Event::create($eventData['eventDetails']['eventTitle']);
+
+            if ($eventData['eventDetails']['eventDescription']) $event->description($eventData['eventDetails']['eventDescription']);
+
+            if ($eventData['eventDetails']['eventFullDay']) $event->fullDay();
+
+            else {
+                $event->startsAt(\Carbon\Carbon::createFromFormat('d.m.Y H:i', $eventData['eventDetails']['eventDateFrom'], 'Europe/Stockholm'))
+                    ->endsAt(\Carbon\Carbon::createFromFormat('d.m.Y H:i', $eventData['eventDetails']['eventDateTo'], 'Europe/Stockholm'));
+            }
+
+            $calendar = Calendar::create()
+                ->name('eAvio Calendar')
+                ->event($event)
+                ->get();
+        }
 
         if ($requestData['sendToAll']) {
             $users = $this->userUtility->getAllUsers();
@@ -145,12 +167,13 @@ class CustomEmailSenderController
         $sender = collect(config('novaemailsender.from.options'))
             ->push($this->getAuthUserSender()) // remember the auth select option
             ->firstWhere('address', $requestData['from']);
+
         $content = $requestData['htmlContent'];
         $subject = $requestData['subject'];
 
-        $users->each(function ($user) use ($content, $subject, $sender, $attachments) {
+        $users->each(function ($user) use ($content, $subject, $sender, $attachments, $calendar) {
             \Mail::to($user)
-                ->send(new CustomMessageMailable($subject, $content, $sender, $attachments));
+                ->send(new CustomMessageMailable($subject, $content, $sender, $attachments, $calendar));
         });
 
         if (config('novaemailsender.nebula_sender.key')) {

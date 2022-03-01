@@ -2,7 +2,7 @@
  * @name ApiService
  * @description - A service/factory that will handle all Ajax features
  */
- export default {
+export default {
 	/**
 	 * @name drafts
 	 * @description Returns all of the drafts associated with this key
@@ -202,9 +202,10 @@
 	 * @param {array} recipients
 	 * @param {string} htmlContent
 	 * @param {array} files
+	 * @param {object} event
 	 * @return {Promise<Object>}
 	 */
-	sendMessage(from, subject, sendToAll, recipients = [], htmlContent, files) {
+	sendMessage(from, subject, sendToAll, recipients = [], htmlContent, files, event) {
 		return new Promise((resolve, reject) => {
 			Nova.request()
 				.post("/nova-vendor/custom-email-sender/send", {
@@ -213,7 +214,8 @@
 					sendToAll,
 					recipients,
 					htmlContent,
-					files
+					files,
+					event
 				})
 				.then(response => {
 					return resolve(response.data);
