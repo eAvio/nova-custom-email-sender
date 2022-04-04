@@ -77,16 +77,16 @@ class CustomEmailSenderController
 
         $roles = Role::select('id', 'name', 'slug')->with('users:id,first_name,last_name,email')
             ->whereHas('users', function ($query) {
-                return $query->where('active', true);
+                return $query->where('active', true)->where('newsletter_notification', 1);
             })->get();
 
         foreach ($roles as $key => $role) {
             $return[$key] = $role->toArray();
-            $return[$key]['users'] = $role->users->pluck('title', 'email');
+            $return[$key]['users'] = $role->users()->where('users.active', true)->where('users.newsletter_notification', true)->get()->pluck('title', 'email');
         }
 
         foreach ($sections as $key => $sectionId) {
-            $users = User::select('id', 'first_name', 'last_name', 'email')->where('active', true)->whereHas('usersActivities', function ($q) use ($sectionId) {
+            $users = User::select('id', 'first_name', 'last_name', 'email')->where('active', true)->where('newsletter_notification', true)->whereHas('usersActivities', function ($q) use ($sectionId) {
                 $q->where('section_id', $sectionId)->where('active', true);
             })->get()->pluck('title', 'email');
 
@@ -107,7 +107,6 @@ class CustomEmailSenderController
                     $sectionName = null;
                     break;
             }
-
             $return[] = [
                 'id' => $sectionId,
                 'name' => $sectionName,
@@ -173,7 +172,7 @@ class CustomEmailSenderController
 
         $users->each(function ($user) use ($content, $subject, $sender, $attachments, $calendar) {
             \Mail::to($user)
-                ->send(new CustomMessageMailable($subject, $content, $sender, $attachments, $calendar));
+                ->send(new CustomMessageMailable($subject, $content, $sender, $attachments, $calendar, $user['email']));
         });
 
         if (config('novaemailsender.nebula_sender.key')) {

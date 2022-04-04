@@ -28,7 +28,7 @@ class UserUtility
         $userCollection = collect([]);
 
         foreach ($this->models as $model) {
-            $model->select($selectQuery)->where('active', true)->chunk(200, function ($users) use ($userCollection) {
+            $model->select($selectQuery)->where('active', true)->where('newsletter_notification', 1)->chunk(200, function ($users) use ($userCollection) {
                 foreach ($users as $user) {
                     $object = $this->buildResult($user);
 
