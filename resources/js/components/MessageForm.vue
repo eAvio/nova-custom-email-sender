@@ -5,7 +5,11 @@
       defer
       src="https://unpkg.com/vue-upload-component"
     ></script>
-    <script type="application/javascript" defer src="https://unpkg.com/vue"></script>
+    <script
+      type="application/javascript"
+      defer
+      src="https://unpkg.com/vue"
+    ></script>
     <div class="w-3/5">
       <h3 class="text-base text-80 font-bold mb-3">
         {{ messages["from-header"] }}
@@ -87,7 +91,11 @@
           />
         </div>
         <div class="mb-8" v-if="useFileContent">
-          <file-select @input="loadFile" v-model="htmlFile" :messages="messages" />
+          <file-select
+            @input="loadFile"
+            v-model="htmlFile"
+            :messages="messages"
+          />
         </div>
         <div class="mb-8" v-else>
           <p class="mb-2">{{ messages["content-copy"] }}</p>
@@ -101,7 +109,9 @@
           </div>
           <div
             class="drop-class"
-            :class="$refs.upload && $refs.upload.dropActive ? 'upload-highlight' : ''"
+            :class="
+              $refs.upload && $refs.upload.dropActive ? 'upload-highlight' : ''
+            "
           >
             <file-upload
               v-if="!loading"
@@ -120,7 +130,11 @@
               Add Attachment
             </file-upload>
             <ul>
-              <li class="attachment-item" v-for="(file, index) in files" :key="file.id">
+              <li
+                class="attachment-item"
+                v-for="(file, index) in files"
+                :key="file.id"
+              >
                 <img v-if="isImage(file.name)" :src="file.blob" />
                 <img
                   v-else
@@ -152,7 +166,10 @@
               </li>
             </ul>
 
-            <div class="drop-here-label" v-if="$refs.upload && $refs.upload.dropActive">
+            <div
+              class="drop-here-label"
+              v-if="$refs.upload && $refs.upload.dropActive"
+            >
               Drop here...
             </div>
           </div>
@@ -190,7 +207,11 @@
               @click="sendMessage"
               :disabled="isThinking || !formIsValid()"
             >
-              {{ loading ? messages["send-message-loading"] : messages["send-message"] }}
+              {{
+                loading
+                  ? messages["send-message-loading"]
+                  : messages["send-message"]
+              }}
             </button>
             <button
               class="btn btn-default btn-primary"
@@ -198,7 +219,9 @@
               :disabled="isThinking || !draftIsValid()"
             >
               <span v-if="draftSaved">
-                {{ draftSaving ? messages["updating"] : messages["update-draft"] }}
+                {{
+                  draftSaving ? messages["updating"] : messages["update-draft"]
+                }}
               </span>
               <span v-else>
                 {{ draftSaving ? messages["saving"] : messages["save-draft"] }}
@@ -211,7 +234,11 @@
               @click="preview"
               :disabled="isThinking || !formIsValid()"
             >
-              {{ gettingPreview ? messages["preview-loading"] : messages["preview"] }}
+              {{
+                gettingPreview
+                  ? messages["preview-loading"]
+                  : messages["preview"]
+              }}
             </button>
           </div>
         </div>
@@ -221,14 +248,20 @@
             @click="sendMessage"
             :disabled="isThinking || !formIsValid()"
           >
-            {{ loading ? messages["send-message-loading"] : messages["send-message"] }}
+            {{
+              loading
+                ? messages["send-message-loading"]
+                : messages["send-message"]
+            }}
           </button>
           <button
             class="btn btn-default btn-secondary"
             @click="preview"
             :disabled="isThinking || !formIsValid()"
           >
-            {{ gettingPreview ? messages["preview-loading"] : messages["preview"] }}
+            {{
+              gettingPreview ? messages["preview-loading"] : messages["preview"]
+            }}
           </button>
         </div>
       </div>
@@ -238,6 +271,7 @@
       <div class="recipients-list px-6">
         <h3 class="text-base text-80 font-bold mb-3">
           {{ messages["recipients-list-header"] }}
+          {{ !sendToAll ? `(${recipients.length})` : "" }}
         </h3>
         <div>
           <ul class="divide-y divide-gray-200" style="padding-left: 0">
@@ -292,7 +326,10 @@
       </div>
     </div>
 
-    <preview-modal ref="previewModal" @preview="setGettingPreview"></preview-modal>
+    <preview-modal
+      ref="previewModal"
+      @preview="setGettingPreview"
+    ></preview-modal>
   </div>
 </template>
 
@@ -491,7 +528,9 @@ export default {
       }
 
       if (exists) {
-        var removeIndex = this.files.map((file) => file.name).indexOf(newFile.name);
+        var removeIndex = this.files
+          .map((file) => file.name)
+          .indexOf(newFile.name);
 
         ~removeIndex && this.files.splice(removeIndex, 1);
       }
@@ -499,7 +538,10 @@ export default {
       newFile.headers.name = newFile.name;
       newFile.headers.type = newFile.type;
       // Automatic upload
-      if (Boolean(newFile) !== Boolean(oldFile) || oldFile.error !== newFile.error) {
+      if (
+        Boolean(newFile) !== Boolean(oldFile) ||
+        oldFile.error !== newFile.error
+      ) {
         if (!this.$refs.upload.active) {
           this.$refs.upload.active = true;
         }
@@ -821,12 +863,12 @@ ul {
   position: absolute;
   right: 15px;
   top: 26px;
-  filter: invert(40%) sepia(37%) saturate(4513%) hue-rotate(335deg) brightness(91%)
-    contrast(96%);
+  filter: invert(40%) sepia(37%) saturate(4513%) hue-rotate(335deg)
+    brightness(91%) contrast(96%);
 }
 .trash-box:hover {
-  filter: invert(20%) sepia(61%) saturate(2458%) hue-rotate(340deg) brightness(104%)
-    contrast(117%);
+  filter: invert(20%) sepia(61%) saturate(2458%) hue-rotate(340deg)
+    brightness(104%) contrast(117%);
 }
 .upload-highlight {
   border: 1px dotted rgba(0, 0, 0, 0.3);
