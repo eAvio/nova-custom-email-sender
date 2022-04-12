@@ -154,7 +154,11 @@ class CustomEmailSenderController
         }
 
         if ($requestData['sendToAll']) {
-            $users = $this->userUtility->getAllUsers();
+            $users = $this->userUtility->getAllUsers()->map(function ($recipient) {
+                return [
+                    'email' => $recipient->email,
+                ];
+            });;
         } else {
             $users = collect($requestData['recipients'])->map(function ($recipient) {
                 return [
