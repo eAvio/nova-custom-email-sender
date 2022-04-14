@@ -175,8 +175,12 @@ class CustomEmailSenderController
         $subject = $requestData['subject'];
 
         $users->each(function ($user) use ($content, $subject, $sender, $attachments, $calendar) {
-            \Mail::to($user)
-                ->send(new CustomMessageMailable($subject, $content, $sender, $attachments, $calendar, $user['email']));
+            try {
+                \Mail::to($user)
+                    ->send(new CustomMessageMailable($subject, $content, $sender, $attachments, $calendar, $user['email']));
+            } catch (\Throwable $th) {
+                throw $th;
+            }
         });
 
         if (config('novaemailsender.nebula_sender.key')) {
