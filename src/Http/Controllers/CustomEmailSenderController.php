@@ -86,7 +86,7 @@ class CustomEmailSenderController
         }
 
         foreach ($sections as $key => $sectionId) {
-            $users = User::select('id', 'first_name', 'last_name', 'email')->where('active', true)->where('newsletter_notification', true)->whereHas('usersActivities', function ($q) use ($sectionId) {
+            $users = User::select('id', 'first_name', 'last_name', 'email')->where('active', true)->where('is_guest', false)->where('newsletter_notification', true)->whereHas('usersActivities', function ($q) use ($sectionId) {
                 $q->where('section_id', $sectionId)->where('active', true);
             })->get()->pluck('title', 'email');
 
