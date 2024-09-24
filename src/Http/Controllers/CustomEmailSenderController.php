@@ -77,18 +77,34 @@ class CustomEmailSenderController
 
         $roles = Role::select('id', 'name', 'slug')->with('users:id,first_name,last_name,email')
             ->whereHas('users', function ($query) {
-                return $query->where('active', true)->where('newsletter_notification', 1);
+                return $query->where('active', true)
+                    ->where(function ($query) {
+                        $query->where('is_guest', true)->where('newsletter_notification', 1)
+                            ->orWhere('is_guest', false);
+                    });
             })->get();
 
         foreach ($roles as $key => $role) {
             $return[$key] = $role->toArray();
-            $return[$key]['users'] = $role->users()->where('users.active', true)->where('users.newsletter_notification', true)->get()->pluck('title', 'email');
+            $return[$key]['users'] = $role->users()->where('users.active', true)
+                ->where(function ($query) {
+                    $query->where('is_guest', true)->where('newsletter_notification', 1)
+                        ->orWhere('is_guest', false);
+                })
+                ->get()->pluck('title', 'email');
         }
 
         foreach ($sections as $key => $sectionId) {
-            $users = User::select('id', 'first_name', 'last_name', 'email')->where('active', true)->where('is_guest', false)->where('newsletter_notification', true)->whereHas('usersActivities', function ($q) use ($sectionId) {
-                $q->where('section_id', $sectionId)->where('active', true);
-            })->get()->pluck('title', 'email');
+            $users = User::select('id', 'first_name', 'last_name', 'email')
+                ->where('active', true)
+                ->where(function ($query) {
+                    $query->where('is_guest', true)->where('newsletter_notification', 1)
+                        ->orWhere('is_guest', false);
+                })
+                ->whereHas('usersActivities', function ($q) use ($sectionId) {
+                    $q->where('section_id', $sectionId)->where('active', true);
+                })
+                ->get()->pluck('title', 'email');
 
             switch ($sectionId) {
                 case 18:
@@ -107,6 +123,7 @@ class CustomEmailSenderController
                     $sectionName = null;
                     break;
             }
+
             $return[] = [
                 'id' => $sectionId,
                 'name' => $sectionName,
@@ -116,6 +133,7 @@ class CustomEmailSenderController
 
         return $return;
     }
+
 
     /**
      * Sends the messages to the requested users.

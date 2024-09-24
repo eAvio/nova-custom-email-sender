@@ -28,17 +28,22 @@ class UserUtility
         $userCollection = collect([]);
 
         foreach ($this->models as $model) {
-            $model->select($selectQuery)->where('active', true)->where('newsletter_notification', 1)->chunk(200, function ($users) use ($userCollection) {
-                foreach ($users as $user) {
-                    $object = $this->buildResult($user);
-
-                    $userCollection->push($object);
-                }
-            });
+            $model->select($selectQuery)->where('active', true)
+                ->where(function ($query) {
+                    $query->where('is_guest', true)->where('newsletter_notification', 1)
+                        ->orWhere('is_guest', false);
+                })
+                ->chunk(200, function ($users) use ($userCollection) {
+                    foreach ($users as $user) {
+                        $object = $this->buildResult($user);
+                        $userCollection->push($object);
+                    }
+                });
         }
 
         return $userCollection;
     }
+
 
     /**
      * @param string $query
