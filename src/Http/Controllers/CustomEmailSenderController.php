@@ -94,18 +94,27 @@ class CustomEmailSenderController
                 ->get()->pluck('title', 'email');
         }
 
-        foreach ($sections as $key => $sectionId) {
-            $users = User::select('id', 'first_name', 'last_name', 'email')
+        foreach ($sections as $sectionId) {
+            // Fetch all users for the section
+            $allUsers = User::select('id', 'first_name', 'last_name', 'email')
                 ->where('active', true)
-                ->where(function ($query) {
-                    $query->where('is_guest', true)->where('newsletter_notification', 1)
-                        ->orWhere('is_guest', false);
-                })
+                ->where('is_guest', false)
                 ->whereHas('usersActivities', function ($q) use ($sectionId) {
                     $q->where('section_id', $sectionId)->where('active', true);
                 })
                 ->get()->pluck('title', 'email');
 
+            // Fetch only guests with newsletter notifications for the section
+            $guestUsers = User::select('id', 'first_name', 'last_name', 'email')
+                ->where('active', true)
+                ->where('is_guest', true)
+                ->where('newsletter_notification', 1)
+                ->whereHas('usersActivities', function ($q) use ($sectionId) {
+                    $q->where('section_id', $sectionId)->where('active', true);
+                })
+                ->get()->pluck('title', 'email');
+
+            // Define section name based on section ID
             switch ($sectionId) {
                 case 18:
                     $sectionName = 'Power Section';
@@ -124,16 +133,25 @@ class CustomEmailSenderController
                     break;
             }
 
+            // Add the main section to the return array
             $return[] = [
                 'id' => $sectionId,
                 'name' => $sectionName,
-                'users' => $users
+                'users' => $allUsers
             ];
+
+            // Only add the guest section if there are any guest users with newsletter notifications
+            if ($guestUsers->isNotEmpty()) {
+                $return[] = [
+                    'id' => $sectionId . '_guests',
+                    'name' => $sectionName . ' Guests',
+                    'users' => $guestUsers
+                ];
+            }
         }
 
         return $return;
     }
-
 
     /**
      * Sends the messages to the requested users.
